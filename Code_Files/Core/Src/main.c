@@ -101,45 +101,49 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  	if (socket(0, Sn_MR_TCP, SERVER_PORT, 0) == 0) {
-	  	        if (listen(0) == SOCK_OK) {
-	  	            while (1) {
-	  	                if (getSn_SR(0) == SOCK_ESTABLISHED) {
-
-	  	                	// Send Data to PC
-	  	                    const char* message1 = "Hello World\r\n";
-	  	                    send(0, (uint8_t*)message1, strlen(message1));
-	  	                    HAL_Delay(100);
-
-	  	                    // Checking whether Data received or not
-	  	                    memset(recvBuffer, 0, sizeof(recvBuffer));
-	  	                    if (getSn_RX_RSR(0) > 0) {
-	  	                        recv(0, (uint8_t*)recvBuffer, getSn_RX_RSR(0));
-	  	                    }
 
 
-	  	                    // Receive Data from PC and confirm the received Data by sending another message to PC
-	  	                    if (strncmp(recvBuffer, "Hello", 5) == 0) {
-	  	                        const char* message2 = "Received\r\n";
-	  	                        send(0, (uint8_t*)message2, strlen(message2));
-	  	                        HAL_GPIO_TogglePin(LED_L1_GPIO_Port, LED_L1_Pin);
-	  	                    }
-	  	                }
 
-	  	                if (!(getPHYCFGR() & PHYCFGR_LNK_ON)) {
-	  	                    break;
-	  	                }
 
-	  	                if (getSn_SR(0) == SOCK_CLOSE_WAIT || getSn_SR(0) == SOCK_CLOSED) {
-	  	                    disconnect(0);
-	  	                    closesock(0);
-	  	                    if (listen(0) != SOCK_OK) {
-	  	                        break;
-	  	                    }
-	  	                }
-	  	            }
-	  	        }
-	  	    }
+//	  	if (socket(0, Sn_MR_TCP, SERVER_PORT, 0) == 0) {
+//	  	        if (listen(0) == SOCK_OK) {
+//	  	            while (1) {
+//	  	                if (getSn_SR(0) == SOCK_ESTABLISHED) {
+//
+//	  	                	// Send Data to PC
+//	  	                    const char* message1 = "Hello World\r\n";
+//	  	                    send(0, (uint8_t*)message1, strlen(message1));
+//	  	                    HAL_Delay(100);
+//
+//	  	                    // Checking whether Data received or not
+//	  	                    memset(recvBuffer, 0, sizeof(recvBuffer));
+//	  	                    if (getSn_RX_RSR(0) > 0) {
+//	  	                        recv(0, (uint8_t*)recvBuffer, getSn_RX_RSR(0));
+//	  	                    }
+//
+//
+//	  	                    // Receive Data from PC and confirm the received Data by sending another message to PC
+//	  	                    if (strncmp(recvBuffer, "Hello", 5) == 0) {
+//	  	                        const char* message2 = "Received\r\n";
+//	  	                        send(0, (uint8_t*)message2, strlen(message2));
+//	  	                        HAL_GPIO_TogglePin(LED_L1_GPIO_Port, LED_L1_Pin);
+//	  	                    }
+//	  	                }
+//
+//	  	                if (!(getPHYCFGR() & PHYCFGR_LNK_ON)) {
+//	  	                    break;
+//	  	                }
+//
+//	  	                if (getSn_SR(0) == SOCK_CLOSE_WAIT || getSn_SR(0) == SOCK_CLOSED) {
+//	  	                    disconnect(0);
+//	  	                    closesock(0);
+//	  	                    if (listen(0) != SOCK_OK) {
+//	  	                        break;
+//	  	                    }
+//	  	                }
+//	  	            }
+//	  	        }
+//	  	    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
