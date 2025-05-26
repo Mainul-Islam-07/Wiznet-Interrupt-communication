@@ -43,23 +43,9 @@ void wizchip_writeburst(uint8_t* pBuf, uint16_t len) {
 	}
 }
 
-// Interrupt Configuration
-void W5500_Enable_Interrupts(void) {
-    setIMR(IM_IR7 | IM_IR6 | IM_IR5 | IM_IR4); // Global interrupts
-    setSIMR(0xFF); // Enable socket interrupts for all sockets
-    for (int i = 0; i < MAX_SOCK_NUM; i++){
-    	setSn_IMR(i, (Sn_IR_CON | Sn_IR_DISCON | Sn_IR_RECV | Sn_IR_TIMEOUT));
-    }
 
-}
 
-void W5500_Init_Sockets(void) {
-    for (uint8_t sn = 0; sn < MAX_SOCK_NUM; sn++) {
-        if (socket(sn, Sn_MR_TCP, SERVER_PORT, 0) == sn) {
-            listen(sn);
-        }
-    }
-}
+
 
 
 void W5500Init() {
