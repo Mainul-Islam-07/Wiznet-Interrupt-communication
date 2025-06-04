@@ -7,51 +7,50 @@
 
 #include <w5500_interrupt.h>
 
+char sendBuff[128];
 
-W5500_EventFlags w5500_event_flags[MAX_SOCK_NUM] = {0};
+W5500_EventFlags w5500_event_flags[MAX_SOCK_NUM] = { 0 };
 sock_state_t sock_status[MAX_SOCK_NUM];
 uint8_t buf[32];
 
-uint8_t recv_buf[MAX_SOCK_NUM][32] = {0};
-uint8_t client_ip[MAX_SOCK_NUM][4] = {0};
+uint8_t recv_buf[MAX_SOCK_NUM][128] = { 0 };
+uint8_t client_ip[MAX_SOCK_NUM][4] = { 0 };
 
 uint8_t sn;
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 //    static uint32_t last_interrupt_time = 0;
 //    uint32_t current_time = HAL_GetTick();
 
-    // Always handle W5500 interrupt immediately (no debounce)
-    if (GPIO_Pin == W5500_INT_Pin) {
-        W5500_InterruptHandler();
-        return;
-    }
+// Always handle W5500 interrupt immediately (no debounce)
+	if (GPIO_Pin == W5500_INT_Pin) {
+		W5500_InterruptHandler();
+		return;
+	}
 }
-
 
 void W5500_Init_Sockets(void) {
-    for (uint8_t sn = 0; sn < MAX_SOCK_NUM; sn++) {
-        if (socket(sn, Sn_MR_TCP, SERVER_PORT, 0) == sn) {
-            listen(sn);
-        }
-    }
+	for (uint8_t sn = 0; sn < MAX_SOCK_NUM; sn++) {
+		if (socket(sn, Sn_MR_TCP, SERVER_PORT, 0) == sn) {
+			listen(sn);
+		}
+	}
 }
 
-void W5500_Close_Socket(void){
-				printf("Connection in closing state, restarting...\r\n");
-				disconnect(sn);
-				closesock(sn);
-				listen(sn);
+void W5500_Close_Socket(void) {
+	printf("Connection in closing state, restarting...\r\n");
+	disconnect(sn);
+	closesock(sn);
+	listen(sn);
 }
 
 // Interrupt Configuration
 void W5500_Enable_Interrupts(void) {
-    setIMR(IM_IR7 | IM_IR6 | IM_IR5 | IM_IR4); // Global interrupts
-    setSIMR(0xFF); // Enable socket interrupts for all sockets
-    for (int i = 0; i < MAX_SOCK_NUM; i++){
-    	setSn_IMR(i, (Sn_IR_CON | Sn_IR_DISCON | Sn_IR_RECV | Sn_IR_TIMEOUT));
-    }
+	setIMR(IM_IR7 | IM_IR6 | IM_IR5 | IM_IR4); // Global interrupts
+	setSIMR(0xFF); // Enable socket interrupts for all sockets
+	for (int i = 0; i < MAX_SOCK_NUM; i++) {
+		setSn_IMR(i, (Sn_IR_CON | Sn_IR_DISCON | Sn_IR_RECV | Sn_IR_TIMEOUT));
+	}
 
 }
 
@@ -59,7 +58,6 @@ void W5500_InterruptHandler(void) {
 	for (uint8_t sn = 0; sn < MAX_SOCK_NUM; sn++) {
 		uint8_t ir = getSn_IR(sn);
 		if (ir) {
-
 
 			w5500_event_flags[sn].socket = sn;
 			w5500_event_flags[sn].connected = (ir & Sn_IR_CON) ? 1 : 0;
@@ -73,110 +71,114 @@ void W5500_InterruptHandler(void) {
 	}
 }
 
+void W5500_Handle_Events(void) {
+	for (sn = 0; sn < MAX_SOCK_NUM; sn++) {
+		if (w5500_event_flags[sn].connected)
+			handle_connection(sn);
 
-void W5500_Handle_Events(void)
-{
-    for (sn = 0; sn < MAX_SOCK_NUM; sn++) {
-        if (w5500_event_flags[sn].connected)
-            handle_connection(sn);
+		if (w5500_event_flags[sn].disconnected)
+			handle_disconnection(sn);
 
-        if (w5500_event_flags[sn].disconnected)
-            handle_disconnection(sn);
+		if (w5500_event_flags[sn].received)
+			handle_received(sn);
 
-        if (w5500_event_flags[sn].received)
-            handle_received(sn);
+		if (w5500_event_flags[sn].timeout)
+			handle_timeout(sn);
 
-        if (w5500_event_flags[sn].timeout)
-            handle_timeout(sn);
-
-        sock_status[sn] = getSn_SR(sn);
-        if (sock_status[sn] == SOCK_STATUS_CLOSE_WAIT || sock_status[sn] == SOCK_STATUS_CLOSED){
-                    W5500_Close_Socket();
-            }
-        }
+		sock_status[sn] = getSn_SR(sn);
+		if (sock_status[sn] == SOCK_STATUS_CLOSE_WAIT
+				|| sock_status[sn] == SOCK_STATUS_CLOSED) {
+			W5500_Close_Socket();
+		}
+	}
 }
 
-
 void handle_connection(uint8_t sn) {
-    // Wait for established state before reading DIPR
-    if (getSn_SR(sn) == SOCK_ESTABLISHED) {
-        getSn_DIPR(sn, client_ip[sn]);
-        printf("Socket %d connected from %d.%d.%d.%d", sn,
-               client_ip[sn][0], client_ip[sn][1], client_ip[sn][2], client_ip[sn][3]);
-    } else {
-        memset(client_ip[sn], 0, 4);
-        printf("Socket %d connection event, but not established ", sn);
-    }
+	// Wait for established state before reading DIPR
+	if (getSn_SR(sn) == SOCK_ESTABLISHED) {
+		getSn_DIPR(sn, client_ip[sn]);
+		printf("Socket %d connected from %d.%d.%d.%d", sn, client_ip[sn][0],
+				client_ip[sn][1], client_ip[sn][2], client_ip[sn][3]);
+	} else {
+		memset(client_ip[sn], 0, 4);
+		printf("Socket %d connection event, but not established ", sn);
+	}
 
-    memset(&w5500_event_flags[sn], 0, sizeof(W5500_EventFlags));
+	memset(&w5500_event_flags[sn], 0, sizeof(W5500_EventFlags));
 }
 
 void handle_received(uint8_t sn) {
-    int32_t size = getSn_RX_RSR(sn);
-    if (size > 0 && size < sizeof(recv_buf[sn])) {
-        int32_t len = recv(sn, recv_buf[sn], size);
-        if (len > 0) {
-            recv_buf[sn][len] = '\0';
-            // recv_buf[sn]
-        }
-    }
-    memset(&w5500_event_flags[sn], 0, sizeof(W5500_EventFlags));
+	int32_t size = getSn_RX_RSR(sn);
+	if (size > 0 && size < sizeof(recv_buf[sn])) {
+		int32_t len = recv(sn, recv_buf[sn], size);
+		if (len > 0) {
+			recv_buf[sn][len] = '\0';
+			// recv_buf[sn]
+		}
+	}
+	memset(&w5500_event_flags[sn], 0, sizeof(W5500_EventFlags));
+	broadcast();
 }
 
 void handle_sent(uint8_t sn) {
-    printf("Data sent on socket %d\n", sn);
+	printf("Data sent on socket %d\n", sn);
 
-    memset(&w5500_event_flags[sn], 0, sizeof(W5500_EventFlags));
+	memset(&w5500_event_flags[sn], 0, sizeof(W5500_EventFlags));
 }
 
 void handle_disconnection(uint8_t sn) {
-    printf("Socket %d disconnected ", sn);
-    memset(client_ip[sn], 0, 4); // Reset client IP on disconnection
-    disconnect(sn);
-    closesock(sn);
-    socket(sn, Sn_MR_TCP, SERVER_PORT, 0);
-    listen(sn);
+	printf("Socket %d disconnected ", sn);
+	memset(client_ip[sn], 0, 4); // Reset client IP on disconnection
+	disconnect(sn);
+	closesock(sn);
+	socket(sn, Sn_MR_TCP, SERVER_PORT, 0);
+	listen(sn);
 
-    memset(&w5500_event_flags[sn], 0, sizeof(W5500_EventFlags));
+	memset(&w5500_event_flags[sn], 0, sizeof(W5500_EventFlags));
 }
 
 void handle_timeout(uint8_t sn) {
-    printf("Timeout on socket %d\n", sn);
-    disconnect(sn);
-    closesock(sn);
-    socket(sn, Sn_MR_TCP, SERVER_PORT, 0);
-    listen(sn);
+	printf("Timeout on socket %d\n", sn);
+	disconnect(sn);
+	closesock(sn);
+	socket(sn, Sn_MR_TCP, SERVER_PORT, 0);
+	listen(sn);
 
-    memset(&w5500_event_flags[sn], 0, sizeof(W5500_EventFlags));
+	memset(&w5500_event_flags[sn], 0, sizeof(W5500_EventFlags));
 }
 
+int8_t SendToSocket(uint8_t sn, const char *msg) {
+	if (getSn_SR(sn) == SOCK_ESTABLISHED) {
 
-int8_t SendToSocket(uint8_t sn, const char *msg)
-{
-    if (getSn_SR(sn) == SOCK_ESTABLISHED) {
-
-    	int32_t result = send(sn, (uint8_t *)msg, strlen(msg));
-        if (result > 0) {
-            printf("Sent on socket %d: %s\n", sn, msg);
-            return 0; // Success
-        }
-        else
-        {
-            printf("Failed to send on socket %d\n ", sn);
-            return -2; // Send error
-        }
-    } else {
-        printf("Socket %d not connected\n", sn);
-        return -1; // Socket not established
-    }
+		int32_t result = send(sn, (uint8_t*) msg, strlen(msg));
+		if (result > 0) {
+			printf("Sent on socket %d: %s\n", sn, msg);
+			return 0; // Success
+		} else {
+			printf("Failed to send on socket %d\n ", sn);
+			return -2; // Send error
+		}
+	} else {
+		printf("Socket %d not connected\n", sn);
+		return -1; // Socket not established
+	}
 }
 
+void broadcast(void) {
+	for (int socket_no = 0; socket_no < MAX_SOCK_NUM; socket_no++) {
+		// Receive Data from PC and confirm the received Data by sending another message to PC
+//			for (int ssocket_no = 0; ssocket_no < MAX_SOCK_NUM; ssocket_no++){
+//		if (socket_no != sn) {
 
+			send(socket_no, (uint8_t*) recv_buf[sn], sizeof(recv_buf[sn]));
 
+//					snprintf(sendBuff, sizeof(sendBuff), (char*)recv_buf[socket_no], "\r\n");
 
+//					send(ssocket_no, (uint8_t*)sendBuff, strlen(sendBuff));
+		}
+//			}
 
-
-
-
-
+//	}
+	memset(&recv_buf[sn], 0, sizeof(recv_buf[sn]));
+}
 

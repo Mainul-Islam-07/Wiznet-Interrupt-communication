@@ -16,7 +16,7 @@
 #define MAX_SOCK_NUM 8
 
 extern uint8_t sn;
-extern uint8_t recv_buf[MAX_SOCK_NUM][32];
+extern uint8_t recv_buf[MAX_SOCK_NUM][128];
 
 typedef struct {
     uint8_t socket;
@@ -55,5 +55,6 @@ void handle_disconnection(uint8_t sn);
 void handle_timeout(uint8_t sn);
 int8_t SendToSocket(uint8_t sn, const char *msg);
 
+void broadcast (void);
 
 #endif /* INC_W5500_INTERRUPT_H_ */

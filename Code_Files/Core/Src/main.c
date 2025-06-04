@@ -43,7 +43,7 @@
 SPI_HandleTypeDef hspi1;
 
 /* USER CODE BEGIN PV */
-char sendBuffer[128];// Data holder
+//char sendBuffer[128];// Data holder
 wiz_NetInfo netInfo = { .mac = { 0x00, 0x08, 0xdc, 0xab, 0xcd, 0xef }, .ip = {
 	  		192, 168, 20, 14 }, .sn = { 255, 255, 255, 0 }, .gw = { 192, 168, 20, 1 },
 	  		.dns = { 8, 8, 8, 8 }, .dhcp = NETINFO_STATIC };
@@ -105,7 +105,7 @@ int main(void)
   {
 
 		W5500_Handle_Events();
-
+//1
 		// Send Data to PC
 //		for (int socket_no = 0; socket_no < MAX_SOCK_NUM; socket_no++){
 //		const char* message1 = "Hello World\r\n";
@@ -113,20 +113,7 @@ int main(void)
 //		SendToSocket(socket_no, message1);
 //		HAL_Delay(100);
 //		}
-
-		for (int socket_no = 0; socket_no < MAX_SOCK_NUM; socket_no++){
-		// Receive Data from PC and confirm the received Data by sending another message to PC
-		if (strncmp((char*)recv_buf[socket_no], "Hello", 5) == 0) {
-			memset(&recv_buf[socket_no], 0, sizeof(recv_buf[socket_no]));
-//			const char* message2 = "Received\r\n";
-//			send(socket_no, (uint8_t*)message2, strlen(message2));
-
-			snprintf(sendBuffer, sizeof(sendBuffer), "Received from %d\r\n", socket_no);
-			 send(socket_no, (uint8_t*)sendBuffer, strlen(sendBuffer));
-			HAL_GPIO_TogglePin(LED_L1_GPIO_Port, LED_L1_Pin);
-		}
-		}
-
+//2
 //		for (int socket_no = 0; socket_no < MAX_SOCK_NUM; socket_no++){
 //		// Receive Data from PC and confirm the received Data by sending another message to PC
 //		if (strncmp((char*)recv_buf[socket_no], "Hello", 5) == 0) {
@@ -140,6 +127,7 @@ int main(void)
 //		}
 //		}
 
+//3
 
 //		if (strncmp((char*)recv_buf[0], "Hello", 5) == 0) {
 //			memset(&recv_buf[0], 0, sizeof(recv_buf[0]));
