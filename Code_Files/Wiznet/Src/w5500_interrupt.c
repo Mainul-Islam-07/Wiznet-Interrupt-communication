@@ -17,6 +17,19 @@ uint8_t client_ip[MAX_SOCK_NUM][4] = {0};
 
 uint8_t sn;
 
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+//    static uint32_t last_interrupt_time = 0;
+//    uint32_t current_time = HAL_GetTick();
+
+    // Always handle W5500 interrupt immediately (no debounce)
+    if (GPIO_Pin == W5500_INT_Pin) {
+        W5500_InterruptHandler();
+        return;
+    }
+}
+
+
 void W5500_Init_Sockets(void) {
     for (uint8_t sn = 0; sn < MAX_SOCK_NUM; sn++) {
         if (socket(sn, Sn_MR_TCP, SERVER_PORT, 0) == sn) {
@@ -53,7 +66,7 @@ void W5500_InterruptHandler(void) {
 			w5500_event_flags[sn].disconnected = (ir & Sn_IR_DISCON) ? 1 : 0;
 			w5500_event_flags[sn].received = (ir & Sn_IR_RECV) ? 1 : 0;
 			w5500_event_flags[sn].timeout = (ir & Sn_IR_TIMEOUT) ? 1 : 0;
-			//w5500_event_flags[sn].sent = (ir & Sn_IR_SENDOK) ? 1 : 0;
+			w5500_event_flags[sn].sent = (ir & Sn_IR_SENDOK) ? 1 : 0;
 
 			setSn_IR(sn, ir);  // Clear all flags that are set
 		}
@@ -104,8 +117,7 @@ void handle_received(uint8_t sn) {
         int32_t len = recv(sn, recv_buf[sn], size);
         if (len > 0) {
             recv_buf[sn][len] = '\0';
-            //process_received_command(sn, (char *)recv_buf[sn]);
-            //processReceivedCommand((char *)recv_buf[sn], SOURCE_TCP);
+            // recv_buf[sn]
         }
     }
     memset(&w5500_event_flags[sn], 0, sizeof(W5500_EventFlags));

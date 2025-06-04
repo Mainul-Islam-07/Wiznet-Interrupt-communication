@@ -49,6 +49,7 @@ void wizchip_writeburst(uint8_t* pBuf, uint16_t len) {
 
 
 void W5500Init() {
+	HAL_Delay(500);
 	uint8_t tmp;
 	// initialize the buffers, 2kb for each socket
 	uint8_t memsize[2][8] = {{4,2,2,2, 2,2,1,1}, {4,2,2,2, 2,2,1,1}};
@@ -79,5 +80,7 @@ void W5500Init() {
 
 	wizchip_setnetinfo(&netInfo);
 	wizchip_getnetinfo(&netInfo);
+
+	W5500_Init_Sockets();
 
 }

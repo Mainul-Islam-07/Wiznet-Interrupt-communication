@@ -316,6 +316,7 @@ int8_t disconnect(uint8_t sn)
 
 int32_t send(uint8_t sn, uint8_t * buf, uint16_t len)
 {
+   sock_is_sending &= ~(1 << sn); ////This line is added new.
    uint8_t tmp=0;
    uint16_t freesize=0;
    

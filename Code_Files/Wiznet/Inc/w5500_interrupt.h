@@ -16,6 +16,7 @@
 #define MAX_SOCK_NUM 8
 
 extern uint8_t sn;
+extern uint8_t recv_buf[MAX_SOCK_NUM][32];
 
 typedef struct {
     uint8_t socket;

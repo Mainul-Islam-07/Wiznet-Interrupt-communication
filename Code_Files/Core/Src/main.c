@@ -43,10 +43,11 @@
 SPI_HandleTypeDef hspi1;
 
 /* USER CODE BEGIN PV */
-char recvBuffer[128];// Data holder
+char sendBuffer[128];// Data holder
 wiz_NetInfo netInfo = { .mac = { 0x00, 0x08, 0xdc, 0xab, 0xcd, 0xef }, .ip = {
-	  		192, 168, 0, 14 }, .sn = { 255, 255, 255, 0 }, .gw = { 192, 168, 0, 1 },
+	  		192, 168, 20, 14 }, .sn = { 255, 255, 255, 0 }, .gw = { 192, 168, 20, 1 },
 	  		.dns = { 8, 8, 8, 8 }, .dhcp = NETINFO_STATIC };
+uint8_t rrr = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,6 +94,7 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
+//  HAL_GPIO_WritePin(LED_L1_GPIO_Port, LED_L1_Pin, SET);
   W5500Init();
 
   /* USER CODE END 2 */
@@ -102,52 +104,59 @@ int main(void)
   while (1)
   {
 
+		W5500_Handle_Events();
+
+		// Send Data to PC
+//		for (int socket_no = 0; socket_no < MAX_SOCK_NUM; socket_no++){
+//		const char* message1 = "Hello World\r\n";
+////		send(socket_no, (uint8_t*)message1, strlen(message1));
+//		SendToSocket(socket_no, message1);
+//		HAL_Delay(100);
+//		}
+
+		for (int socket_no = 0; socket_no < MAX_SOCK_NUM; socket_no++){
+		// Receive Data from PC and confirm the received Data by sending another message to PC
+		if (strncmp((char*)recv_buf[socket_no], "Hello", 5) == 0) {
+			memset(&recv_buf[socket_no], 0, sizeof(recv_buf[socket_no]));
+//			const char* message2 = "Received\r\n";
+//			send(socket_no, (uint8_t*)message2, strlen(message2));
+
+			snprintf(sendBuffer, sizeof(sendBuffer), "Received from %d\r\n", socket_no);
+			 send(socket_no, (uint8_t*)sendBuffer, strlen(sendBuffer));
+			HAL_GPIO_TogglePin(LED_L1_GPIO_Port, LED_L1_Pin);
+		}
+		}
+
+//		for (int socket_no = 0; socket_no < MAX_SOCK_NUM; socket_no++){
+//		// Receive Data from PC and confirm the received Data by sending another message to PC
+//		if (strncmp((char*)recv_buf[socket_no], "Hello", 5) == 0) {
+//			memset(&recv_buf[socket_no], 0, sizeof(recv_buf[socket_no]));
+////			const char* message2 = "Received\r\n";
+////			send(socket_no, (uint8_t*)message2, strlen(message2));
+//
+//			snprintf(sendBuffer, sizeof(sendBuffer), "Received from %d\r\n", socket_no);
+//			 send(socket_no, (uint8_t*)sendBuffer, strlen(sendBuffer));
+//			HAL_GPIO_TogglePin(LED_L1_GPIO_Port, LED_L1_Pin);
+//		}
+//		}
 
 
+//		if (strncmp((char*)recv_buf[0], "Hello", 5) == 0) {
+//			memset(&recv_buf[0], 0, sizeof(recv_buf[0]));
+//			const char* message2 = "Received\r\n";
+////			rrr = send(0, (uint8_t*)message2, strlen(message2));
+//
+////			SendToSocket(0, message2);
+//			HAL_GPIO_TogglePin(LED_L1_GPIO_Port, LED_L1_Pin);
+//		}
 
-//	  	if (socket(0, Sn_MR_TCP, SERVER_PORT, 0) == 0) {
-//	  	        if (listen(0) == SOCK_OK) {
-//	  	            while (1) {
-//	  	                if (getSn_SR(0) == SOCK_ESTABLISHED) {
-//
-//	  	                	// Send Data to PC
-//	  	                    const char* message1 = "Hello World\r\n";
-//	  	                    send(0, (uint8_t*)message1, strlen(message1));
-//	  	                    HAL_Delay(100);
-//
-//	  	                    // Checking whether Data received or not
-//	  	                    memset(recvBuffer, 0, sizeof(recvBuffer));
-//	  	                    if (getSn_RX_RSR(0) > 0) {
-//	  	                        recv(0, (uint8_t*)recvBuffer, getSn_RX_RSR(0));
-//	  	                    }
-//
-//
-//	  	                    // Receive Data from PC and confirm the received Data by sending another message to PC
-//	  	                    if (strncmp(recvBuffer, "Hello", 5) == 0) {
-//	  	                        const char* message2 = "Received\r\n";
-//	  	                        send(0, (uint8_t*)message2, strlen(message2));
-//	  	                        HAL_GPIO_TogglePin(LED_L1_GPIO_Port, LED_L1_Pin);
-//	  	                    }
-//	  	                }
-//
-//	  	                if (!(getPHYCFGR() & PHYCFGR_LNK_ON)) {
-//	  	                    break;
-//	  	                }
-//
-//	  	                if (getSn_SR(0) == SOCK_CLOSE_WAIT || getSn_SR(0) == SOCK_CLOSED) {
-//	  	                    disconnect(0);
-//	  	                    closesock(0);
-//	  	                    if (listen(0) != SOCK_OK) {
-//	  	                        break;
-//	  	                    }
-//	  	                }
-//	  	            }
-//	  	        }
-//	  	    }
+//	  HAL_Delay(1000);
+}
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+
   /* USER CODE END 3 */
 }
 
@@ -249,7 +258,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, W5500_RESET_Pin|W5500_CS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LED_L1_GPIO_Port, LED_L1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED_L1_GPIO_Port, LED_L1_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pins : W5500_RESET_Pin W5500_CS_Pin */
   GPIO_InitStruct.Pin = W5500_RESET_Pin|W5500_CS_Pin;
